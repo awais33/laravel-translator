@@ -2,37 +2,40 @@
 
 namespace App\Repositories;
 
+use App\Http\Requests\Translations\ListTranslationsRequest;
 use App\Models\Translation;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Collection;
 
 class TranslationRepository
 {
-    public function paginate(array $filters, int $perPage = 20): LengthAwarePaginator
+    public function paginate(ListTranslationsRequest $request): LengthAwarePaginator
     {
-        $query = Translation::with(['locale', 'tags']);
+        $query   = Translation::with(['locale', 'tags']);
+        $filters = $request->filters();
 
-        if (! empty($filters['locale'])) {
+        if (!empty($filters['locale'])) {
             $query->forLocale($filters['locale']);
         }
 
-        if (! empty($filters['tag'])) {
+        if (!empty($filters['tag'])) {
             $query->withTag($filters['tag']);
         }
 
-        if (! empty($filters['search'])) {
+        if (!empty($filters['search'])) {
             $query->search($filters['search']);
         }
 
-        if (! empty($filters['key'])) {
+        if (!empty($filters['key'])) {
             $query->where('key', $filters['key']);
         }
 
-        if (! empty($filters['group'])) {
+        if (!empty($filters['group'])) {
             $query->where('group', $filters['group']);
         }
 
-        return $query->latest()->paginate($perPage);
+        $request->applyOrdering($query);
+
+        return $query->paginate($request->getPerPage(), ['*'], 'page', $request->getPage());
     }
 
     public function findById(int $id): Translation
@@ -44,7 +47,7 @@ class TranslationRepository
     {
         $translation = Translation::create($data);
 
-        if (! empty($tagIds)) {
+        if (!empty($tagIds)) {
             $translation->tags()->sync($tagIds);
         }
 
@@ -65,14 +68,6 @@ class TranslationRepository
     public function delete(Translation $translation): void
     {
         $translation->delete();
-    }
-
-    public function allForLocale(string $localeCode): Collection
-    {
-        return Translation::with('tags')
-            ->forLocale($localeCode)
-            ->select(['id', 'key', 'value', 'group'])
-            ->get();
     }
 
     public function exportByLocale(string $localeCode): array

@@ -1,74 +1,75 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: translator_app
-    restart: unless-stopped
-    volumes:
-      - .:/var/www/html
-      - /var/www/html/vendor
-    environment:
-      - APP_ENV=local
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - translator
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: translator_app
+        restart: unless-stopped
+        volumes:
+            - .:/var/www/html
+            - /var/www/html/vendor
+        environment:
+            - APP_ENV=local
+        depends_on:
+            postgres:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        networks:
+            - translator
 
-  nginx:
-    image: nginx:alpine
-    container_name: translator_nginx
-    restart: unless-stopped
-    ports:
-      - "8000:80"
-    volumes:
-      - .:/var/www/html
-      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      - app
-    networks:
-      - translator
+    nginx:
+        image: nginx:alpine
+        container_name: translator_nginx
+        restart: unless-stopped
+        ports:
+            - "8000:80"
+        volumes:
+            - .:/var/www/html
+            - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+        depends_on:
+            - app
+        networks:
+            - translator
 
-  postgres:
-    image: postgres:16-alpine
-    container_name: translator_postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: laravel_translator
-      POSTGRES_USER: translator
-      POSTGRES_PASSWORD: secret
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U translator -d laravel_translator"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - translator
+    postgres:
+        image: postgres:16-alpine
+        container_name: translator_postgres
+        restart: unless-stopped
+        environment:
+            POSTGRES_DB: laravel_translator
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: secret
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        ports:
+            - "5433:5432"
+        healthcheck:
+            test:
+                ["CMD-SHELL", "pg_isready -U translator -d laravel_translator"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        networks:
+            - translator
 
-  redis:
-    image: redis:7-alpine
-    container_name: translator_redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-    networks:
-      - translator
+    redis:
+        image: redis:7-alpine
+        container_name: translator_redis
+        restart: unless-stopped
+        ports:
+            - "6379:6379"
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 5s
+            timeout: 3s
+            retries: 5
+        networks:
+            - translator
 
 volumes:
-  postgres_data:
+    postgres_data:
 
 networks:
-  translator:
-    driver: bridge
+    translator:
+        driver: bridge

@@ -3,34 +3,33 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Locale;
+use App\Http\Requests\Locales\StoreLocaleRequest;
+use App\Http\Responses\ApiResponse;
+use App\Http\Services\LocaleService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class LocaleController extends Controller
 {
+    public function __construct(
+        private readonly LocaleService $service
+    ) {}
+
     public function index(): JsonResponse
     {
-        return response()->json(Locale::where('is_active', true)->get());
+        return ApiResponse::success($this->service->all());
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreLocaleRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'code' => 'required|string|max:10|unique:locales,code',
-            'name' => 'required|string|max:100',
-        ]);
+        $locale = $this->service->create($request->validated());
 
-        $locale = Locale::create($data);
-
-        return response()->json($locale, 201);
+        return ApiResponse::created($locale, 'Locale created successfully');
     }
 
     public function destroy(int $id): JsonResponse
     {
-        $locale = Locale::findOrFail($id);
-        $locale->update(['is_active' => false]);
+        $this->service->deactivate($id);
 
-        return response()->json(['message' => 'Locale deactivated.']);
+        return ApiResponse::success(null, 'Locale deactivated successfully');
     }
 }

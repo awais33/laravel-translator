@@ -14,7 +14,8 @@ describe('Locale Management', function () {
 
         $this->actingAs($this->user)->getJson('/api/locales')
             ->assertOk()
-            ->assertJsonCount(1);
+            ->assertJsonPath('success', true)
+            ->assertJsonCount(1, 'data');
     });
 
     it('creates a new locale', function () {
@@ -22,7 +23,8 @@ describe('Locale Management', function () {
             'code' => 'de',
             'name' => 'German',
         ])->assertStatus(201)
-          ->assertJsonPath('code', 'de');
+          ->assertJsonPath('success', true)
+          ->assertJsonPath('data.code', 'de');
 
         $this->assertDatabaseHas('locales', ['code' => 'de']);
     });
@@ -33,15 +35,15 @@ describe('Locale Management', function () {
         $this->actingAs($this->user)->postJson('/api/locales', [
             'code' => 'en',
             'name' => 'English Again',
-        ])->assertStatus(422)
-          ->assertJsonValidationErrors(['code']);
+        ])->assertStatus(422)->assertJsonValidationErrors(['code']);
     });
 
     it('deactivates a locale', function () {
         $locale = Locale::create(['code' => 'es', 'name' => 'Spanish']);
 
         $this->actingAs($this->user)->deleteJson("/api/locales/{$locale->id}")
-            ->assertOk();
+            ->assertOk()
+            ->assertJsonPath('success', true);
 
         $this->assertDatabaseHas('locales', ['id' => $locale->id, 'is_active' => false]);
     });

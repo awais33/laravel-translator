@@ -3,8 +3,8 @@
 use App\Models\Locale;
 use App\Models\Tag;
 use App\Models\Translation;
+use App\Http\Services\TranslationService;
 use App\Repositories\TranslationRepository;
-use App\Services\TranslationService;
 use Illuminate\Support\Facades\Cache;
 
 describe('TranslationService', function () {

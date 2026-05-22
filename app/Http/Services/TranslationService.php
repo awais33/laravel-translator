@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Services;
+namespace App\Http\Services;
 
+use App\Http\Requests\Translations\ListTranslationsRequest;
 use App\Models\Locale;
 use App\Models\Tag;
 use App\Models\Translation;
@@ -16,9 +17,9 @@ class TranslationService
         private readonly TranslationRepository $repository
     ) {}
 
-    public function list(array $filters, int $perPage = 20): LengthAwarePaginator
+    public function list(ListTranslationsRequest $request): LengthAwarePaginator
     {
-        return $this->repository->paginate($filters, $perPage);
+        return $this->repository->paginate($request);
     }
 
     public function find(int $id): Translation
@@ -48,18 +49,18 @@ class TranslationService
 
     public function update(int $id, array $data): Translation
     {
-        $translation = $this->repository->findById($id);
+        $translation   = $this->repository->findById($id);
         $oldLocaleCode = $translation->locale->code;
 
         $updateData = array_filter([
-            'key'   => $data['key'] ?? null,
+            'key'   => $data['key']   ?? null,
             'value' => $data['value'] ?? null,
             'group' => $data['group'] ?? null,
         ], fn ($v) => $v !== null);
 
         if (isset($data['locale'])) {
-            $locale = Locale::where('code', $data['locale'])->firstOrFail();
-            $updateData['locale_id'] = $locale->id;
+            $locale                    = Locale::where('code', $data['locale'])->firstOrFail();
+            $updateData['locale_id']   = $locale->id;
         }
 
         $tagIds = isset($data['tags']) ? $this->resolveTagIds($data['tags']) : null;
@@ -67,6 +68,7 @@ class TranslationService
         $translation = $this->repository->update($translation, $updateData, $tagIds);
 
         $this->flushExportCache($oldLocaleCode);
+
         if (isset($data['locale']) && $data['locale'] !== $oldLocaleCode) {
             $this->flushExportCache($data['locale']);
         }
@@ -85,9 +87,7 @@ class TranslationService
 
     public function export(string $localeCode): array
     {
-        $cacheKey = "translations:export:{$localeCode}";
-
-        return Cache::remember($cacheKey, now()->addHours(24), function () use ($localeCode) {
+        return Cache::remember("translations:export:{$localeCode}", now()->addHours(24), function () use ($localeCode) {
             Locale::where('code', $localeCode)->firstOrFail();
 
             return $this->repository->exportByLocale($localeCode);
@@ -103,9 +103,7 @@ class TranslationService
 
     private function ensureUnique(int $localeId, string $key): void
     {
-        $exists = Translation::where('locale_id', $localeId)->where('key', $key)->exists();
-
-        if ($exists) {
+        if (Translation::where('locale_id', $localeId)->where('key', $key)->exists()) {
             throw ValidationException::withMessages([
                 'key' => ["Translation key '{$key}' already exists for this locale."],
             ]);

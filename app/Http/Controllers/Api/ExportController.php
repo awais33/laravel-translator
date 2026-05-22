@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\TranslationService;
+use App\Http\Responses\ApiResponse;
+use App\Http\Services\TranslationService;
 use Illuminate\Http\JsonResponse;
 
 class ExportController extends Controller
@@ -16,7 +17,7 @@ class ExportController extends Controller
     {
         $data = $this->service->export($locale);
 
-        return response()->json([
+        return ApiResponse::success([
             'locale' => $locale,
             'data'   => $data,
         ]);

@@ -12,7 +12,8 @@ describe('Authentication', function () {
         ]);
 
         $response->assertStatus(201)
-            ->assertJsonStructure(['token', 'user' => ['id', 'name', 'email']]);
+            ->assertJsonPath('success', true)
+            ->assertJsonStructure(['success', 'message', 'data' => ['token', 'user' => ['id', 'name', 'email']]]);
 
         $this->assertDatabaseHas('users', ['email' => 'john@example.com']);
     });
@@ -25,19 +26,18 @@ describe('Authentication', function () {
             'email'                 => 'john@example.com',
             'password'              => 'secret123',
             'password_confirmation' => 'secret123',
-        ])->assertStatus(422)
-          ->assertJsonValidationErrors(['email']);
+        ])->assertStatus(422)->assertJsonValidationErrors(['email']);
     });
 
     it('allows a registered user to login', function () {
         $user = User::factory()->create(['password' => bcrypt('secret123')]);
 
-        $response = $this->postJson('/api/auth/login', [
+        $this->postJson('/api/auth/login', [
             'email'    => $user->email,
             'password' => 'secret123',
-        ]);
-
-        $response->assertOk()->assertJsonStructure(['token', 'user']);
+        ])->assertOk()
+          ->assertJsonPath('success', true)
+          ->assertJsonStructure(['data' => ['token', 'user']]);
     });
 
     it('rejects login with wrong credentials', function () {
@@ -54,7 +54,8 @@ describe('Authentication', function () {
 
         $this->actingAs($user)->getJson('/api/auth/me')
             ->assertOk()
-            ->assertJson(['email' => $user->email]);
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.email', $user->email);
     });
 
     it('logs out successfully', function () {
@@ -63,7 +64,7 @@ describe('Authentication', function () {
 
         $this->withToken($token)->postJson('/api/auth/logout')
             ->assertOk()
-            ->assertJson(['message' => 'Logged out successfully.']);
+            ->assertJsonPath('success', true);
 
         $this->assertDatabaseCount('personal_access_tokens', 0);
     });
