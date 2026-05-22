@@ -70,6 +70,11 @@ class TranslationRepository
         $translation->delete();
     }
 
+    public function existsByLocaleAndKey(int $localeId, string $key): bool
+    {
+        return Translation::where('locale_id', $localeId)->where('key', $key)->exists();
+    }
+
     public function exportByLocale(string $localeCode): array
     {
         return Translation::forLocale($localeCode)

@@ -3,25 +3,29 @@
 namespace App\Http\Services;
 
 use App\Models\Locale;
+use App\Repositories\LocaleRepository;
 use Illuminate\Database\Eloquent\Collection;
 
 class LocaleService
 {
+    public function __construct(
+        private readonly LocaleRepository $localeRepository
+    ) {}
+
     public function all(): Collection
     {
-        return Locale::where('is_active', true)->get();
+        return $this->localeRepository->allActive();
     }
 
     public function create(array $data): Locale
     {
-        return Locale::create($data);
+        return $this->localeRepository->create($data);
     }
 
     public function deactivate(int $id): Locale
     {
-        $locale = Locale::findOrFail($id);
-        $locale->update(['is_active' => false]);
+        $locale = $this->localeRepository->findOrFail($id);
 
-        return $locale;
+        return $this->localeRepository->update($locale, ['is_active' => false]);
     }
 }

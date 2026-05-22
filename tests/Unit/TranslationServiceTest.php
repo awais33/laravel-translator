@@ -1,16 +1,27 @@
 <?php
 
+use App\Http\Services\TranslationService;
 use App\Models\Locale;
 use App\Models\Tag;
 use App\Models\Translation;
-use App\Http\Services\TranslationService;
+use App\Repositories\LocaleRepository;
+use App\Repositories\TagRepository;
 use App\Repositories\TranslationRepository;
 use Illuminate\Support\Facades\Cache;
+
+function makeTranslationService(): TranslationService
+{
+    return new TranslationService(
+        new TranslationRepository(),
+        new LocaleRepository(),
+        new TagRepository(),
+    );
+}
 
 describe('TranslationService', function () {
     beforeEach(function () {
         $this->locale  = Locale::create(['code' => 'en', 'name' => 'English']);
-        $this->service = new TranslationService(new TranslationRepository());
+        $this->service = makeTranslationService();
     });
 
     it('creates a translation with tags', function () {
@@ -59,11 +70,11 @@ describe('TranslationService', function () {
         $this->service->delete($translation->id);
 
         $this->assertDatabaseMissing('translations', ['id' => $translation->id]);
-        Cache::shouldHaveReceived('forget')->with("translations:export:en");
+        Cache::shouldHaveReceived('forget')->with('translations:export:en');
     });
 
     it('exports translations grouped by group', function () {
-        Translation::factory()->forLocale($this->locale)->create(['key' => 'login', 'value' => 'Login', 'group' => 'auth']);
+        Translation::factory()->forLocale($this->locale)->create(['key' => 'login', 'value' => 'Login',   'group' => 'auth']);
         Translation::factory()->forLocale($this->locale)->create(['key' => 'title', 'value' => 'Welcome', 'group' => 'general']);
 
         $export = $this->service->export('en');
@@ -80,6 +91,6 @@ describe('TranslationService', function () {
         $this->service->export('en');
         $this->service->export('en');
 
-        Cache::shouldHaveReceived('remember')->with("translations:export:en", \Mockery::any(), \Mockery::any());
+        Cache::shouldHaveReceived('remember')->with('translations:export:en', \Mockery::any(), \Mockery::any());
     });
 });

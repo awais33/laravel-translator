@@ -3,9 +3,9 @@
 namespace App\Http\Services;
 
 use App\Http\Requests\Translations\ListTranslationsRequest;
-use App\Models\Locale;
-use App\Models\Tag;
 use App\Models\Translation;
+use App\Repositories\LocaleRepository;
+use App\Repositories\TagRepository;
 use App\Repositories\TranslationRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
@@ -14,28 +14,29 @@ use Illuminate\Validation\ValidationException;
 class TranslationService
 {
     public function __construct(
-        private readonly TranslationRepository $repository
+        private readonly TranslationRepository $translationRepository,
+        private readonly LocaleRepository      $localeRepository,
+        private readonly TagRepository         $tagRepository,
     ) {}
 
     public function list(ListTranslationsRequest $request): LengthAwarePaginator
     {
-        return $this->repository->paginate($request);
+        return $this->translationRepository->paginate($request);
     }
 
     public function find(int $id): Translation
     {
-        return $this->repository->findById($id);
+        return $this->translationRepository->findById($id);
     }
 
     public function create(array $data): Translation
     {
-        $locale = Locale::where('code', $data['locale'])->firstOrFail();
+        $locale = $this->localeRepository->findByCodeOrFail($data['locale']);
 
-        $this->ensureUnique($locale->id, $data['key']);
+        $this->ensureUniqueKey($locale->id, $data['key']);
 
-        $tagIds = $this->resolveTagIds($data['tags'] ?? []);
-
-        $translation = $this->repository->create([
+        $tagIds      = $this->resolveTagIds($data['tags'] ?? []);
+        $translation = $this->translationRepository->create([
             'locale_id' => $locale->id,
             'key'       => $data['key'],
             'value'     => $data['value'],
@@ -49,7 +50,7 @@ class TranslationService
 
     public function update(int $id, array $data): Translation
     {
-        $translation   = $this->repository->findById($id);
+        $translation   = $this->translationRepository->findById($id);
         $oldLocaleCode = $translation->locale->code;
 
         $updateData = array_filter([
@@ -59,13 +60,12 @@ class TranslationService
         ], fn ($v) => $v !== null);
 
         if (isset($data['locale'])) {
-            $locale                    = Locale::where('code', $data['locale'])->firstOrFail();
-            $updateData['locale_id']   = $locale->id;
+            $locale                  = $this->localeRepository->findByCodeOrFail($data['locale']);
+            $updateData['locale_id'] = $locale->id;
         }
 
-        $tagIds = isset($data['tags']) ? $this->resolveTagIds($data['tags']) : null;
-
-        $translation = $this->repository->update($translation, $updateData, $tagIds);
+        $tagIds      = isset($data['tags']) ? $this->resolveTagIds($data['tags']) : null;
+        $translation = $this->translationRepository->update($translation, $updateData, $tagIds);
 
         $this->flushExportCache($oldLocaleCode);
 
@@ -78,32 +78,32 @@ class TranslationService
 
     public function delete(int $id): void
     {
-        $translation = $this->repository->findById($id);
+        $translation = $this->translationRepository->findById($id);
         $localeCode  = $translation->locale->code;
 
-        $this->repository->delete($translation);
+        $this->translationRepository->delete($translation);
         $this->flushExportCache($localeCode);
     }
 
     public function export(string $localeCode): array
     {
         return Cache::remember("translations:export:{$localeCode}", now()->addHours(24), function () use ($localeCode) {
-            Locale::where('code', $localeCode)->firstOrFail();
+            $this->localeRepository->findByCodeOrFail($localeCode);
 
-            return $this->repository->exportByLocale($localeCode);
+            return $this->translationRepository->exportByLocale($localeCode);
         });
     }
 
     private function resolveTagIds(array $tagNames): array
     {
         return collect($tagNames)
-            ->map(fn ($name) => Tag::firstOrCreate(['name' => strtolower($name)])->id)
+            ->map(fn ($name) => $this->tagRepository->firstOrCreateByName($name)->id)
             ->toArray();
     }
 
-    private function ensureUnique(int $localeId, string $key): void
+    private function ensureUniqueKey(int $localeId, string $key): void
     {
-        if (Translation::where('locale_id', $localeId)->where('key', $key)->exists()) {
+        if ($this->translationRepository->existsByLocaleAndKey($localeId, $key)) {
             throw ValidationException::withMessages([
                 'key' => ["Translation key '{$key}' already exists for this locale."],
             ]);
