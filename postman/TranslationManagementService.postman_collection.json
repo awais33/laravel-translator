@@ -1,0 +1,373 @@
+{
+    "info": {
+        "_postman_id": "translation-management-service",
+        "name": "Translation Management Service",
+        "description": "Complete API collection for the Translation Management Service. Import alongside the environment file `TMS.postman_environment.json`.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [],
+    "item": [
+        {
+            "name": "Auth",
+            "item": [
+                {
+                    "name": "Register",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "const res = pm.response.json();",
+                                    "if (res.success && res.data && res.data.token) {",
+                                    "    pm.environment.set('token', res.data.token);",
+                                    "    pm.environment.set('user_id', res.data.user.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            { "key": "Content-Type", "value": "application/json" }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/register",
+                            "host": ["{{base_url}}"],
+                            "path": ["auth", "register"]
+                        }
+                    }
+                },
+                {
+                    "name": "Login",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "const res = pm.response.json();",
+                                    "if (res.success && res.data && res.data.token) {",
+                                    "    pm.environment.set('token', res.data.token);",
+                                    "    pm.environment.set('user_id', res.data.user.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            { "key": "Content-Type", "value": "application/json" }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/login",
+                            "host": ["{{base_url}}"],
+                            "path": ["auth", "login"]
+                        }
+                    }
+                },
+                {
+                    "name": "Me (Current User)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            { "key": "Authorization", "value": "Bearer {{token}}" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/auth/me",
+                            "host": ["{{base_url}}"],
+                            "path": ["auth", "me"]
+                        }
+                    }
+                },
+                {
+                    "name": "Logout",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            { "key": "Authorization", "value": "Bearer {{token}}" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/auth/logout",
+                            "host": ["{{base_url}}"],
+                            "path": ["auth", "logout"]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Translations",
+            "item": [
+                {
+                    "name": "List Translations",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            { "key": "Authorization", "value": "Bearer {{token}}" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/translations?page=1&per_page=20&sort_by=id&sort_dir=desc",
+                            "host": ["{{base_url}}"],
+                            "path": ["translations"],
+                            "query": [
+                                { "key": "page", "value": "1", "description": "Page number" },
+                                { "key": "per_page", "value": "20", "description": "Items per page (max 100)" },
+                                { "key": "sort_by", "value": "id", "description": "Sort field: id, key, group, created_at, updated_at" },
+                                { "key": "sort_dir", "value": "desc", "description": "Sort direction: asc, desc" },
+                                { "key": "locale", "value": "en", "description": "Filter by locale code", "disabled": true },
+                                { "key": "tag", "value": "mobile", "description": "Filter by tag name", "disabled": true },
+                                { "key": "search", "value": "button", "description": "Search in key and value", "disabled": true },
+                                { "key": "key", "value": "auth.login", "description": "Exact key match", "disabled": true },
+                                { "key": "group", "value": "auth", "description": "Filter by group", "disabled": true }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Translation",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            { "key": "Authorization", "value": "Bearer {{token}}" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/translations/{{translation_id}}",
+                            "host": ["{{base_url}}"],
+                            "path": ["translations", "{{translation_id}}"]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Translation",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "const res = pm.response.json();",
+                                    "if (res.success && res.data && res.data.id) {",
+                                    "    pm.environment.set('translation_id', res.data.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            { "key": "Content-Type", "value": "application/json" },
+                            { "key": "Authorization", "value": "Bearer {{token}}" }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"locale_id\": 1,\n    \"key\": \"auth.login.button\",\n    \"value\": \"Sign In\",\n    \"group\": \"auth\",\n    \"tags\": [\"web\", \"mobile\"]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/translations",
+                            "host": ["{{base_url}}"],
+                            "path": ["translations"]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Translation",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            { "key": "Content-Type", "value": "application/json" },
+                            { "key": "Authorization", "value": "Bearer {{token}}" }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"locale_id\": 1,\n    \"key\": \"auth.login.button\",\n    \"value\": \"Log In\",\n    \"group\": \"auth\",\n    \"tags\": [\"web\"]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/translations/{{translation_id}}",
+                            "host": ["{{base_url}}"],
+                            "path": ["translations", "{{translation_id}}"]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Translation",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            { "key": "Authorization", "value": "Bearer {{token}}" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/translations/{{translation_id}}",
+                            "host": ["{{base_url}}"],
+                            "path": ["translations", "{{translation_id}}"]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Locales",
+            "item": [
+                {
+                    "name": "List Locales",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            { "key": "Authorization", "value": "Bearer {{token}}" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/locales",
+                            "host": ["{{base_url}}"],
+                            "path": ["locales"]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Locale",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "const res = pm.response.json();",
+                                    "if (res.success && res.data && res.data.id) {",
+                                    "    pm.environment.set('locale_id', res.data.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            { "key": "Content-Type", "value": "application/json" },
+                            { "key": "Authorization", "value": "Bearer {{token}}" }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"pt\",\n    \"name\": \"Portuguese\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/locales",
+                            "host": ["{{base_url}}"],
+                            "path": ["locales"]
+                        }
+                    }
+                },
+                {
+                    "name": "Deactivate Locale",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            { "key": "Authorization", "value": "Bearer {{token}}" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/locales/{{locale_id}}",
+                            "host": ["{{base_url}}"],
+                            "path": ["locales", "{{locale_id}}"]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Export",
+            "item": [
+                {
+                    "name": "Export Translations (English)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/export/en",
+                            "host": ["{{base_url}}"],
+                            "path": ["export", "en"]
+                        }
+                    }
+                },
+                {
+                    "name": "Export Translations (French)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/export/fr",
+                            "host": ["{{base_url}}"],
+                            "path": ["export", "fr"]
+                        }
+                    }
+                },
+                {
+                    "name": "Export Translations (Spanish)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/export/es",
+                            "host": ["{{base_url}}"],
+                            "path": ["export", "es"]
+                        }
+                    }
+                },
+                {
+                    "name": "Export Translations (German)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/export/de",
+                            "host": ["{{base_url}}"],
+                            "path": ["export", "de"]
+                        }
+                    }
+                },
+                {
+                    "name": "Export Translations (Italian)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/export/it",
+                            "host": ["{{base_url}}"],
+                            "path": ["export", "it"]
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

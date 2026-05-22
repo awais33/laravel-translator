@@ -10,6 +10,15 @@ services:
             - /var/www/html/vendor
         environment:
             - APP_ENV=local
+            - DB_HOST=postgres
+            - DB_PORT=5432
+            - DB_DATABASE=laravel_translator
+            - DB_USERNAME=postgres
+            - DB_PASSWORD=secret
+            - REDIS_HOST=redis
+            - REDIS_PORT=6379
+            - CACHE_STORE=redis
+            - SESSION_DRIVER=database
         depends_on:
             postgres:
                 condition: service_healthy
@@ -46,7 +55,7 @@ services:
             - "5433:5432"
         healthcheck:
             test:
-                ["CMD-SHELL", "pg_isready -U translator -d laravel_translator"]
+                ["CMD-SHELL", "pg_isready -U postgres -d laravel_translator"]
             interval: 5s
             timeout: 5s
             retries: 5
