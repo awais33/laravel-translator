@@ -20,8 +20,8 @@ class SeedTranslations extends Command
         (new LocaleSeeder())->run();
         (new TagSeeder())->run();
 
-        $seeder          = new TranslationSeeder();
-        $seeder->command = $this;
+        $seeder = new TranslationSeeder();
+        $seeder->setCommand($this);
         $seeder->run();
 
         return self::SUCCESS;
